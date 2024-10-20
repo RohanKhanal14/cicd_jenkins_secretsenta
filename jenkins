@@ -1,0 +1,82 @@
+pipeline {
+    agent any
+    
+    tools {
+        jdk 'Java 21'
+        maven 'Maven'
+    }
+    
+    environment{
+        SCANNER_HOME = tool 'sonar-scanner'
+        SONARQUBE_SERVER = 'sonar-server'
+        SONAR_TOKEN = credentials('sonar-token')
+        NVD_API_KEY = credentials('nvd-key')
+    }
+    
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git 'https://github.com/RohanKhanal14/cicd_jenkins_secretsenta.git'
+            }
+        }
+        stage('Maven Compile') {
+            steps {
+                sh 'mvn clean compile'
+            }
+        }
+        stage('Maven Package') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv(SONARQUBE_SERVER) {
+                    // Here \ means the code continues from the next line
+                    sh '''
+                    $SCANNER_HOME/bin/sonar-scanner \
+                    -Dsonar.projectKey=secret-senta \
+                    -Dsonar.java.binaries=. \
+                    -X \
+                    -Dsonar.login=$SONAR_TOKEN
+                    '''
+                }
+            }
+        }
+        stage('OWASP Scan') {
+            steps {
+                dependencyCheck additionalArguments: ' --scan ./ --nvdApiKey=${NVD_API_KEY}', odcInstallation: 'DP'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                withDockerRegistry(credentialsId: 'docker-cred', url: 'https://index.docker.io/v1/' ) {
+                    sh '''
+                    docker build -t secret-senta . 
+                    docker tag secret-senta rohankhanal14/secretsenta:latest
+                    '''
+                }
+            }
+        }
+        stage('Docker Push') {
+            steps {
+                withDockerRegistry(credentialsId: 'docker-cred', url: 'https://index.docker.io/v1/') {
+                    sh "docker push rohankhanal14/secretsenta:latest"
+                }
+            }
+        }
+        stage('Docker Deploy') {
+            steps {
+                withDockerRegistry(credentialsId: 'docker-cred', url: 'https://index.docker.io/v1/') {
+                    sh "docker run -d --name secret-senta -p 8082:8082 rohankhanal14/secretsenta:latest"
+                }
+            }
+        }
+    }
+}
