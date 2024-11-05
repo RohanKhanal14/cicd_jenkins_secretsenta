@@ -17,7 +17,7 @@ spec:
         app: secretsanta
     spec:
       containers:
-      - image: secretsanta
+      - image: rohankhanal14/secretsenta:latest
         name: secretsanta
       ports:
         - containerPort: 5432
