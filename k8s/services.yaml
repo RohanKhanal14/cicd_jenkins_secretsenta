@@ -11,7 +11,7 @@ spec:
   ports:
   - name: "secretsanta-service"
     port: 5000
-    targetPort: 80
+    targetPort: 5432
     nodePort: 31002
   selector:
     app: secretsanta
