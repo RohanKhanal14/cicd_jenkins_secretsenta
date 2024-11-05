@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: secretsanta
+  name: secretsanta
+spec:
+  type: NodePort
+  ports:
+  - name: "secretsanta-service"
+    port: 5000
+    targetPort: 80
+    nodePort: 31002
+  selector:
+    app: secretsanta
+  

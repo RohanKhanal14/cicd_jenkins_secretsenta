@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: secretsanta
+  name: secretsanta
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: secretsanta
+  template:
+    metadata:
+      labels:
+        app: secretsanta
+    spec:
+      containers:
+      - image: secretsanta
+        name: secretsanta
+      ports:
+        - containerPort: 5432
+          name: secretsanta
